@@ -18,9 +18,12 @@ int main(){
   struct sockaddr_in serverAddr;
   struct timeval tv;
   socklen_t addr_size;
+  int sfd;
+  int seq_num = 0;
   struct st
   {
     short int pkt_type;
+    short int seq_num;
     long port_no;
     char name[10];
     char data[10];
@@ -45,6 +48,7 @@ int main(){
 
   struct st s1;
   s1.pkt_type = REG;
+  s1.seq_num = seq_num;
   s1.port_no = 3000;
   strcpy(s1.name,"CLIENT3");
   strcpy(s1.data,"PASS");
@@ -53,15 +57,17 @@ int main(){
   sendto(clientSocket,&s1,sizeof(s1),0,(struct sockaddr *)&serverAddr,addr_size);
   perror("write");
 
+	sfd = open("manoj.txt",O_RDONLY);
   while(1)
   {
 	/*Receive message from server*/
     nBytes = recvfrom(clientSocket,&s1,sizeof(s1),0,NULL, NULL);
-	if(nBytes < 0)
-	{
-    perror("recvfrom");
+    if((nBytes < 0) || (s1.seq_num != seq_num))
+    {
+    	perror("recvfrom");
+  	sendto(clientSocket,&s1,sizeof(s1),0,(struct sockaddr *)&serverAddr,addr_size);
 	continue;	
-	}
+    }
   /*---- Print the received message ----*/
   printf("%hd---%ld---%s-----%s\n",s1.pkt_type,s1.port_no,s1.name,s1.data);
   switch(s1.pkt_type)
@@ -70,19 +76,22 @@ int main(){
         printf("Enter the data to be sent....:");
 //        scanf("%s",s1.data);
 //		strcpy(s1.data,"MANOJ");
-		sprintf(s1.data,"%s %d","MANOJ",++i);
+	//sprintf(s1.data,"%s","1MANOJ.txt");
         s1.pkt_type = REQ;
     	sendto(clientSocket,&s1,sizeof(s1),0,(struct sockaddr *)&serverAddr,addr_size);
         //write(clientSocket,&s1,sizeof(s1));
         perror("write");
         break;
     case ERROR : printf("CONNECTION ERROR\n");
-        break;
+		  return 0;
+        	break;
     case REPLY : printf("REPLY FROM SERVER....%s\n",s1.data);
-				sprintf(s1.data,"%s %d","MANOJ",++i);
-				sleep(2);
-    			sendto(clientSocket,&s1,sizeof(s1),0,(struct sockaddr *)&serverAddr,addr_size);
-        		break;
+		  fgets(s1.data,sizeof(data),fd);
+		  seq_num = seq_num ^ 0x011;
+		  s1.seq_num = seq_num;
+		 sleep(2);
+    		 sendto(clientSocket,&s1,sizeof(s1),0,(struct sockaddr *)&serverAddr,addr_size);
+        	 break;
     default : printf("Invalid packet\n");
               break;
   }
