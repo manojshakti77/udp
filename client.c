@@ -14,7 +14,7 @@ int main(int argc,char **argv)
 
 	if(argc < 4)
 	{
-		printf("Usage : ./cli port_number ip_address username password\n");
+		printf("Usage : ./cli port_number ip_address username password file_name\n");
 		return 0;
 	}
   	/*Create UDP socket*/
@@ -55,7 +55,7 @@ int main(int argc,char **argv)
 	}
 
 	/*Opening the file whose data need to be sent to the SERVER*/
-	fd = fopen("manoj.txt","r");
+	fd = fopen(argv[5],"r");
 	if(fd == NULL)
 	{
 		perror("fopen");
