@@ -55,7 +55,16 @@ int main(int argc,char **argv)
 	}
 
 	/*Opening the file whose data need to be sent to the SERVER*/
-	fd = fopen(argv[5],"r");
+	if(argc == 5)
+	{
+		/*Opening the user supllied file*/
+		fd = fopen(argv[5],"r");
+	}
+	else	
+	{
+		/*Opening the default file(If user doesn't supply any file in the cmd arguments*/
+		fd = fopen("input.txt","r");
+	}	
 	if(fd == NULL)
 	{
 		perror("fopen");
@@ -65,16 +74,20 @@ int main(int argc,char **argv)
 	{
 	/*Receive message from server*/
     nBytes = recvfrom(clientSocket,&s1,sizeof(s1),0,NULL, NULL);
-    if((nBytes < 0) || (s1.seq_num != seq_num))
+    /*Checking the status of recvfrom  & if successfully received checking the sequnce number*/
+	if((nBytes < 0) || (s1.seq_num != seq_num))
     {
-    	perror("recvfrom");
+	    	perror("recvfrom");
   		sendto(clientSocket,&s1,sizeof(s1),0,(struct sockaddr *)&serverAddr,addr_size);
 		continue;	
     }
   	switch(s1.pkt_type)
   	{
     case CONF : printf("CONNECTION CONFIRMED\n");
-				sprintf(s1.data,"%s","manoj.txt");
+				if(argc == 5)
+					strcpy(s1.data,argv[5]);
+				else
+					strcpy(s1.data,"input.txt");
 		  		seq_num = ((seq_num)^(0x01));
         		s1.pkt_type = REQ;
 		  		s1.seq_num = seq_num;
@@ -86,7 +99,7 @@ int main(int argc,char **argv)
         		break;
     case ERROR: printf("CONNECTION ERROR\n");
 				return 0;
-    case REPLY: printf("REPLY FROM SERVER....%s\n",s1.data);
+    case REPLY: printf("REPLY FROM SERVER\n");
 		  		if(fgets(s1.data,sizeof(s1.data),fd))
 				{
 		  		seq_num = ((seq_num)^(0x01));
